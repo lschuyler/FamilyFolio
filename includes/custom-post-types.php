@@ -2,6 +2,16 @@
 add_action( 'init', 'family_folio_register_custom_post_types' );
 
 /**
+ * Register custom post types.
+ */
+
+function family_folio_register_custom_post_types() {
+	familyfolio_register_family_members_cpt();
+	familyfolio_register_family_photos_cpt();
+	familyfolio_register_family_recipe_cpt();
+}
+
+/**
  * Register the Family Members custom post type.
  */
 function familyfolio_register_family_members_cpt() {
@@ -92,14 +102,4 @@ function familyfolio_register_family_recipe_cpt() {
 	];
 
 	register_post_type('family_recipe', $args);
-}
-
-/**
- * Register custom post types.
- */
-
-function family_folio_register_custom_post_types() {
-	familyfolio_register_family_members_cpt();
-	familyfolio_register_family_photos_cpt();
-	familyfolio_register_family_recipe_cpt();
 }

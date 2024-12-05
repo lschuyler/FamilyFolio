@@ -32,6 +32,7 @@ class FamilyFolio {
 		require_once plugin_dir_path( __FILE__ ) . 'includes/admin-settings.php';
 		require_once plugin_dir_path( __FILE__ ) . 'includes/custom-post-types.php';
 		require_once plugin_dir_path( __FILE__ ) . 'includes/meta-boxes.php';
+        require_once plugin_dir_path( __FILE__ ) . 'includes/recipes.php';
 
 		// Initialize plugin
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate_plugin' ) );
