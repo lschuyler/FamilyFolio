@@ -34,7 +34,6 @@ class FamilyFolio {
 		require_once plugin_dir_path( __FILE__ ) . 'includes/meta-boxes.php';
 
 		// Initialize plugin
-		add_action( 'init', array( $this, 'register_post_types' ) );
 		register_deactivation_hook( __FILE__, array( $this, 'deactivate_plugin' ) );
 		register_uninstall_hook( __FILE__, array( __CLASS__, 'uninstall_plugin' ) );
 
@@ -70,26 +69,6 @@ class FamilyFolio {
 		}
 
 		return self::$instance;
-	}
-
-	// Register custom post types
-	public function register_post_types() {
-		register_post_type( 'family_recipe', array(
-			'labels'   => array(
-				'name'          => __( 'Recipes', 'familyfolio' ),
-				'singular_name' => __( 'Recipe', 'familyfolio' )
-			),
-			'public'   => true,
-			'supports' => array( 'title', 'editor', 'custom-fields', 'thumbnail' ),
-			'rewrite'  => array( 'slug' => 'recipes' ),
-		) );
-
-		register_post_type( 'family_photo', array(
-			'labels'   => array( 'name' => 'Photos', 'singular_name' => 'Photo' ),
-			'public'   => true,
-			'supports' => array( 'title', 'editor', 'custom-fields', 'thumbnail' ),
-			'rewrite'  => array( 'slug' => 'photos' ),
-		) );
 	}
 
 	// Add meta boxes

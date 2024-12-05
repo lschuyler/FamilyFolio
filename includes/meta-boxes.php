@@ -284,49 +284,59 @@ function familyfolio_add_relationship_meta_box() {
 /**
  * Render the relationship management meta box.
  */
-function familyfolio_render_relationship_meta_box( $post ) {
-	wp_nonce_field( 'familyfolio_save_relationship_meta_box', 'familyfolio_relationship_meta_box_nonce' );
+function familyfolio_render_relationship_meta_box($post) {
+	wp_nonce_field('familyfolio_save_relationship_meta_box', 'familyfolio_relationship_meta_box_nonce');
 
-	$parent_ids = get_post_meta( $post->ID, '_gedcom_famc', true ); // Parent IDs
-	$spouse_ids = get_post_meta( $post->ID, '_gedcom_fams', true ); // Spouse IDs
+	// Retrieve existing relationships
+	$father_id = get_post_meta($post->ID, '_gedcom_father', true);
+	$mother_id = get_post_meta($post->ID, '_gedcom_mother', true);
+	$spouse_ids = get_post_meta($post->ID, '_gedcom_fams', true); // Spouse IDs
 
-	// Fetch all family members
-	$family_members = get_posts( [
+	// Fetch all family members except the current one
+	$family_members = get_posts([
 		'post_type'   => 'family_member',
-		'numberposts' => - 1,
+		'numberposts' => -1,
 		'orderby'     => 'title',
 		'order'       => 'ASC',
-		'exclude'     => [ $post->ID ], // Exclude current member
-	] );
+		'exclude'     => [$post->ID],
+	]);
+
+	if (empty($family_members)) {
+		echo '<p><strong>No other family members added yet.</strong></p>';
+		echo '<p>Add at least one more person to start building relationships.</p>';
+		return;
+	}
 
 	?>
-    <p>Current Relationships:</p>
-    <ul>
-        <li>Parents: <?php echo implode( ', ', array_map( function ( $id ) {
-				return get_the_title( $id );
-			}, (array) get_post_meta( $post->ID, '_gedcom_famc', true ) ) ); ?></li>
-        <li>Spouses: <?php echo implode( ', ', array_map( function ( $id ) {
-				return get_the_title( $id );
-			}, (array) get_post_meta( $post->ID, '_gedcom_fams', true ) ) ); ?></li>
-    </ul>
-
     <p>
-        <label for="familyfolio_parents">Parents:</label>
-        <select id="familyfolio_parents" name="familyfolio_parents[]" multiple>
-			<?php foreach ( $family_members as $member ) : ?>
-                <option value="<?php echo esc_attr( $member->ID ); ?>" <?php echo in_array( $member->ID, (array) $parent_ids ) ? 'selected' : ''; ?>>
-					<?php echo esc_html( $member->post_title ); ?>
+        <label for="familyfolio_father">Father:</label>
+        <select id="familyfolio_father" name="familyfolio_father">
+            <option value="">Select a Father</option>
+			<?php foreach ($family_members as $member) : ?>
+                <option value="<?php echo esc_attr($member->ID); ?>" <?php selected($father_id, $member->ID); ?>>
+					<?php echo esc_html($member->post_title); ?>
                 </option>
 			<?php endforeach; ?>
         </select>
-        <small>Hold down Ctrl (Windows) or Cmd (Mac) to select multiple parents.</small>
+    </p>
+    <p>
+        <label for="familyfolio_mother">Mother:</label>
+        <select id="familyfolio_mother" name="familyfolio_mother">
+            <option value="">Select a Mother</option>
+			<?php foreach ($family_members as $member) : ?>
+                <option value="<?php echo esc_attr($member->ID); ?>" <?php selected($mother_id, $member->ID); ?>>
+					<?php echo esc_html($member->post_title); ?>
+                </option>
+			<?php endforeach; ?>
+        </select>
     </p>
     <p>
         <label for="familyfolio_spouses">Spouses:</label>
         <select id="familyfolio_spouses" name="familyfolio_spouses[]" multiple>
-			<?php foreach ( $family_members as $member ) : ?>
-                <option value="<?php echo esc_attr( $member->ID ); ?>" <?php echo in_array( $member->ID, (array) $spouse_ids ) ? 'selected' : ''; ?>>
-					<?php echo esc_html( $member->post_title ); ?>
+            <option value="">Select a Spouse</option>
+			<?php foreach ($family_members as $member) : ?>
+                <option value="<?php echo esc_attr($member->ID); ?>" <?php echo in_array($member->ID, (array)$spouse_ids) ? 'selected' : ''; ?>>
+					<?php echo esc_html($member->post_title); ?>
                 </option>
 			<?php endforeach; ?>
         </select>
@@ -338,38 +348,32 @@ function familyfolio_render_relationship_meta_box( $post ) {
 /**
  * Save relationships for family members.
  */
-function familyfolio_save_relationship_metadata( $post_id ) {
-	// Verify nonce
-	if ( ! isset( $_POST['familyfolio_relationship_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['familyfolio_relationship_meta_box_nonce'], 'familyfolio_save_relationship_meta_box' ) ) {
+function familyfolio_save_relationship_metadata($post_id) {
+	if (!isset($_POST['familyfolio_relationship_meta_box_nonce']) || !wp_verify_nonce($_POST['familyfolio_relationship_meta_box_nonce'], 'familyfolio_save_relationship_meta_box')) {
 		return;
 	}
 
-	// Save parent relationships
-	if ( isset( $_POST['familyfolio_parents'] ) ) {
-		$parent_ids = array_map( 'intval', $_POST['familyfolio_parents'] );
-		update_post_meta( $post_id, '_gedcom_famc', $parent_ids );
-
-		// Add child relationship for each parent
-		foreach ( $parent_ids as $parent_id ) {
-			$children = get_post_meta( $parent_id, '_gedcom_children', true ) ?: [];
-			if ( ! in_array( $post_id, $children ) ) {
-				$children[] = $post_id;
-				update_post_meta( $parent_id, '_gedcom_children', $children );
-			}
-		}
+	// Save Father
+	if (isset($_POST['familyfolio_father'])) {
+		update_post_meta($post_id, '_gedcom_father', sanitize_text_field($_POST['familyfolio_father']));
 	}
 
-	// Save spousal relationships
-	if ( isset( $_POST['familyfolio_spouses'] ) ) {
-		$spouse_ids = array_map( 'intval', $_POST['familyfolio_spouses'] );
-		update_post_meta( $post_id, '_gedcom_fams', $spouse_ids );
+	// Save Mother
+	if (isset($_POST['familyfolio_mother'])) {
+		update_post_meta($post_id, '_gedcom_mother', sanitize_text_field($_POST['familyfolio_mother']));
+	}
+
+	// Save Spouses
+	if (isset($_POST['familyfolio_spouses'])) {
+		$spouse_ids = array_map('intval', $_POST['familyfolio_spouses']);
+		update_post_meta($post_id, '_gedcom_fams', $spouse_ids);
 
 		// Add reciprocal spouse relationships
-		foreach ( $spouse_ids as $spouse_id ) {
-			$spouses = get_post_meta( $spouse_id, '_gedcom_fams', true ) ?: [];
-			if ( ! in_array( $post_id, $spouses ) ) {
+		foreach ($spouse_ids as $spouse_id) {
+			$spouses = get_post_meta($spouse_id, '_gedcom_fams', true) ?: [];
+			if (!in_array($post_id, $spouses)) {
 				$spouses[] = $post_id;
-				update_post_meta( $spouse_id, '_gedcom_fams', $spouses );
+				update_post_meta($spouse_id, '_gedcom_fams', $spouses);
 			}
 		}
 	}
