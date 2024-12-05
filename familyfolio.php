@@ -15,11 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // At the top of the file, after the plugin header
-if (!defined('FAMILYFOLIO_VERSION')) {
-    define('FAMILYFOLIO_VERSION', '1.0');
+if ( ! defined( 'FAMILYFOLIO_VERSION' ) ) {
+	define( 'FAMILYFOLIO_VERSION', '1.0' );
 }
-if (!defined('FAMILYFOLIO_PLUGIN_DIR')) {
-    define('FAMILYFOLIO_PLUGIN_DIR', plugin_dir_path(__FILE__));
+if ( ! defined( 'FAMILYFOLIO_PLUGIN_DIR' ) ) {
+	define( 'FAMILYFOLIO_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 }
 
 class FamilyFolio {
@@ -28,14 +28,39 @@ class FamilyFolio {
 
 	// Constructor
 	private function __construct() {
+		// Include necessary files
+		require_once plugin_dir_path( __FILE__ ) . 'includes/admin-settings.php';
+		require_once plugin_dir_path( __FILE__ ) . 'includes/custom-post-types.php';
+		require_once plugin_dir_path( __FILE__ ) . 'includes/meta-boxes.php';
+
 		// Initialize plugin
 		add_action( 'init', array( $this, 'register_post_types' ) );
-		add_action( 'add_meta_boxes', array( $this, 'add_dublin_core_meta_boxes' ) );
-		add_action( 'save_post', array( $this, 'save_dublin_core_metadata' ) );
-		add_action( 'admin_menu', array( $this, 'familyfolio_add_admin_menu' ) );
-		add_action( 'admin_init', 'familyfolio_register_settings' );
-		register_deactivation_hook(__FILE__, array($this, 'deactivate_plugin'));
-		register_uninstall_hook(__FILE__, array(__CLASS__, 'uninstall_plugin'));
+		register_deactivation_hook( __FILE__, array( $this, 'deactivate_plugin' ) );
+		register_uninstall_hook( __FILE__, array( __CLASS__, 'uninstall_plugin' ) );
+
+		// Hooks
+		add_action( 'admin_menu', [ $this, 'add_admin_menu' ] );
+		add_action( 'admin_init', 'familyfolio_register_settings' ); // Can call standalone function
+
+    }
+
+	public function add_admin_menu() {
+		add_menu_page( 'FamilyFolio', 'FamilyFolio', 'manage_options', 'familyfolio', [
+			$this,
+			'main_page'
+		], 'dashicons-networking', 6 );
+		add_submenu_page( 'familyfolio', 'Settings', 'Settings', 'manage_options', 'familyfolio-settings', [
+			$this,
+			'settings_page'
+		] );
+	}
+
+	public function main_page() {
+		echo '<h1>Welcome to FamilyFolio</h1>';
+	}
+
+	public function settings_page() {
+		echo '<h1>FamilyFolio Settings</h1>';
 	}
 
 	// Singleton pattern implementation
@@ -50,7 +75,10 @@ class FamilyFolio {
 	// Register custom post types
 	public function register_post_types() {
 		register_post_type( 'family_recipe', array(
-			'labels'   => array( 'name' => __('Recipes', 'familyfolio'), 'singular_name' => __('Recipe', 'familyfolio') ),
+			'labels'   => array(
+				'name'          => __( 'Recipes', 'familyfolio' ),
+				'singular_name' => __( 'Recipe', 'familyfolio' )
+			),
 			'public'   => true,
 			'supports' => array( 'title', 'editor', 'custom-fields', 'thumbnail' ),
 			'rewrite'  => array( 'slug' => 'recipes' ),
@@ -64,43 +92,18 @@ class FamilyFolio {
 		) );
 	}
 
-	/**
-	 * Register the FamilyFolio admin menu.
-	 */
-	function familyfolio_add_admin_menu() {
-		add_menu_page(
-			'FamilyFolio',          // Page title
-			'FamilyFolio',          // Menu title
-			'manage_options',       // Capability
-			'familyfolio',          // Menu slug
-			'familyfolio_main_page', // Callback function
-			'dashicons-networking', // Icon URL (dashicon for the menu)
-			6                       // Position
-		);
-
-		// Add a settings submenu
-		add_submenu_page(
-			'familyfolio',          // Parent slug
-			'FamilyFolio Settings', // Page title
-			'Settings',             // Submenu title
-			'manage_options',       // Capability
-			'familyfolio-settings', // Menu slug
-			'familyfolio_settings_page' // Callback function
-		);
-	}
-
 	// Add meta boxes
 	public function add_dublin_core_meta_boxes() {
 		// Check user capabilities
-		if (!current_user_can('edit_posts')) {
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
-		
+
 		add_meta_box(
 			'dublin_core_meta',
-			__('Dublin Core Metadata', 'familyfolio'),
-			array($this, 'render_dublin_core_meta_box'),
-			['family_photo', 'family_recipe'],
+			__( 'Dublin Core Metadata', 'familyfolio' ),
+			array( $this, 'render_dublin_core_meta_box' ),
+			[ 'family_photo', 'family_recipe' ],
 			'normal',
 			'high'
 		);
@@ -134,31 +137,6 @@ class FamilyFolio {
 	}
 
 	/**
-	 * Register FamilyFolio settings.
-	 */
-	function familyfolio_register_settings() {
-		register_setting(
-			'familyfolio_settings_group', // Option group
-			'familyfolio_options'         // Option name
-		);
-
-		add_settings_section(
-			'familyfolio_general_settings', // ID
-			'General Settings',             // Title
-			'familyfolio_settings_section_callback', // Callback
-			'familyfolio-settings'          // Page
-		);
-
-		add_settings_field(
-			'familyfolio_example_field',   // ID
-			'Example Field',               // Title
-			'familyfolio_example_field_callback', // Callback
-			'familyfolio-settings',        // Page
-			'familyfolio_general_settings' // Section
-		);
-	}
-
-	/**
 	 * Callback for the settings section.
 	 */
 	function familyfolio_settings_section_callback() {
@@ -182,17 +160,17 @@ class FamilyFolio {
 		?>
         <div class="dublin-core-fields">
             <p>
-                <label for="dc_creator"><?php _e('Creator', 'familyfolio'); ?></label>
-                <input type="text" id="dc_creator" name="dc_creator" class="widefat" 
-                    value="<?php echo esc_attr(get_post_meta($post->ID, 'dc_creator', true)); ?>" />
+                <label for="dc_creator"><?php _e( 'Creator', 'familyfolio' ); ?></label>
+                <input type="text" id="dc_creator" name="dc_creator" class="widefat"
+                       value="<?php echo esc_attr( get_post_meta( $post->ID, 'dc_creator', true ) ); ?>"/>
             </p>
             <p>
-                <label for="dc_date"><?php _e('Date', 'familyfolio'); ?></label>
+                <label for="dc_date"><?php _e( 'Date', 'familyfolio' ); ?></label>
                 <input type="date" id="dc_date" name="dc_date" class="widefat"
-                    value="<?php echo esc_attr(get_post_meta($post->ID, 'dc_date', true)); ?>" />
+                       value="<?php echo esc_attr( get_post_meta( $post->ID, 'dc_date', true ) ); ?>"/>
             </p>
         </div>
-        <?php
+		<?php
 	}
 
 	// Save meta box data
@@ -215,20 +193,20 @@ class FamilyFolio {
 			}
 
 			// Save the data with error checking
-			if (array_key_exists('dc_creator', $_POST)) {
-				$creator = sanitize_text_field($_POST['dc_creator']);
-				if (!update_post_meta($post_id, 'dc_creator', $creator)) {
-					error_log('Failed to update dc_creator for post ' . $post_id);
+			if ( array_key_exists( 'dc_creator', $_POST ) ) {
+				$creator = sanitize_text_field( $_POST['dc_creator'] );
+				if ( ! update_post_meta( $post_id, 'dc_creator', $creator ) ) {
+					error_log( 'Failed to update dc_creator for post ' . $post_id );
 				}
 			}
-			if (array_key_exists('dc_date', $_POST)) {
-				$date = sanitize_text_field($_POST['dc_date']);
-				if (!update_post_meta($post_id, 'dc_date', $date)) {
-					error_log('Failed to update dc_date for post ' . $post_id);
+			if ( array_key_exists( 'dc_date', $_POST ) ) {
+				$date = sanitize_text_field( $_POST['dc_date'] );
+				if ( ! update_post_meta( $post_id, 'dc_date', $date ) ) {
+					error_log( 'Failed to update dc_date for post ' . $post_id );
 				}
 			}
-		} catch (Exception $e) {
-			error_log('Error saving Dublin Core metadata: ' . $e->getMessage());
+		} catch ( Exception $e ) {
+			error_log( 'Error saving Dublin Core metadata: ' . $e->getMessage() );
 		}
 	}
 
