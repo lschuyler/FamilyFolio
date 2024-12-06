@@ -23,7 +23,7 @@ add_filter( 'enter_title_here', 'familyfolio_change_title_placeholder', 10, 2 );
  * @return string The modified placeholder text.
  */
 function familyfolio_change_title_placeholder( $placeholder, $post ) {
-	if ( 'family_member' === $post->post_type ) {
+	if ( 'familyfolio_person' === $post->post_type ) {
 		return 'Full Name';
 	}
 
@@ -35,24 +35,26 @@ function familyfolio_change_title_placeholder( $placeholder, $post ) {
  */
 function familyfolio_add_family_member_meta_box() {
 	add_meta_box(
-		'family_member_dublin_core',
-		'Dublin Core Metadata',
+		'familyfolio_person_dublin_core',
+		'Details of this Family Member',
 		'familyfolio_render_family_member_meta_box',
-		'family_member',
+		'familyfolio_person',
 		'normal',
 		'high'
 	);
 }
 
 /**
- * Render the Dublin Core metadata fields.
+ * Render the GEDCOM metadata fields.
  */
 function familyfolio_render_family_member_meta_box( $post ) {
 	wp_nonce_field( 'familyfolio_save_meta_box', 'familyfolio_meta_box_nonce' );
 
 	// Retrieve existing metadata
 	$first_name  = get_post_meta( $post->ID, '_gedcom_first_name', true );
+	$middle_name = get_post_meta( $post->ID, '_gedcom_middle_name', true );
 	$last_name   = get_post_meta( $post->ID, '_gedcom_last_name', true );
+	$maiden_name = get_post_meta( $post->ID, '_gedcom_maiden_name', true );
 	$birth_date  = get_post_meta( $post->ID, '_gedcom_birth_date', true );
 	$birth_place = get_post_meta( $post->ID, '_gedcom_birth_place', true );
 	$death_date  = get_post_meta( $post->ID, '_gedcom_death_date', true );
@@ -75,8 +77,19 @@ function familyfolio_render_family_member_meta_box( $post ) {
                value="<?php echo esc_attr( $first_name ); ?>"/>
     </p>
     <p>
+        <label for="gedcom_first_name">Middle Name(s):</label>
+        <input type="text" id="gedcom_first_name" name="gedcom_middle_name"
+               value="<?php echo esc_attr( $middle_name ); ?>"/>
+    </p>
+    <p>
         <label for="gedcom_last_name">Last Name:</label>
         <input type="text" id="gedcom_last_name" name="gedcom_last_name" value="<?php echo esc_attr( $last_name ); ?>"/>
+    </p>
+    <p>
+        <label for="gedcom_maiden_name">Maiden Name:</label>
+        <input type="text" id="gedcom_maiden_name" name="gedcom_maiden_name"
+               value="<?php echo esc_attr( $maiden_name ); ?>"/>
+        <small>Enter the maiden name if applicable.</small>
     </p>
     <p>
         <label for="gedcom_birth_date">Birth Date:</label>
@@ -119,7 +132,9 @@ function familyfolio_save_family_member_metadata( $post_id ) {
 
 	$fields = [
 		'_gedcom_first_name'  => 'gedcom_first_name',
+		'_gedcom_middle_name' => 'gedcom_middle_name',
 		'_gedcom_last_name'   => 'gedcom_last_name',
+		'_gedcom_maiden_name' => 'gedcom_maiden_name',
 		'_gedcom_birth_date'  => 'gedcom_birth_date',
 		'_gedcom_birth_place' => 'gedcom_birth_place',
 		'_gedcom_death_date'  => 'gedcom_death_date',
@@ -272,7 +287,7 @@ add_action( 'save_post', 'familyfolio_save_relationship_metadata' );
  */
 function familyfolio_add_relationship_meta_box() {
 	add_meta_box(
-		'family_member_relationships',
+		'familyfolio_person_relationships',
 		'Relationships',
 		'familyfolio_render_relationship_meta_box',
 		'familyfolio_person',
