@@ -7,4 +7,3 @@ echo '<p>Name: ' . esc_html( $first_name ) . ' ' . esc_html( $last_name ) . '</p
 if ( ! empty( $maiden_name ) ) {
 	echo '<p>Maiden Name: ' . esc_html( $maiden_name ) . '</p>';
 }
-?>

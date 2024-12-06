@@ -93,12 +93,11 @@ function familyfolio_register_family_recipe_cpt() {
 
 	$args = [
 		'labels'             => $labels,
-		'public'             => true, // Visible on the front end
-		'show_ui'            => true,  // Show in admin interface
-		'show_in_menu'       => 'familyfolio', // Set parent menu slug
-		'capability_type'    => 'post',
-		'supports'           => ['title', 'editor', 'custom-fields', 'thumbnail'], // Enable these features
-		'menu_icon'          => 'dashicons-carrot', // Icon for the admin menu
+		'public'             => true,
+		'show_ui'            => true,
+		'show_in_rest'       => true, // Enable REST API support for Gutenberg
+		'supports'           => ['title', 'editor', 'thumbnail', 'excerpt'],
+		'menu_icon'          => 'dashicons-carrot',
 	];
 
 	register_post_type('familyfolio_recipe', $args);
