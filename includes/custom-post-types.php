@@ -41,7 +41,7 @@ function familyfolio_register_family_members_cpt() {
 		'menu_icon'          => 'dashicons-id', // Icon for the admin menu
 	];
 
-	register_post_type('family_member', $args);
+	register_post_type('familyfolio_person', $args);
 }
 
 function familyfolio_register_family_photos_cpt() {
@@ -71,7 +71,7 @@ function familyfolio_register_family_photos_cpt() {
 		'menu_icon'          => 'dashicons-format-image', // Icon for the admin menu
 	];
 
-	register_post_type('family_photo', $args);
+	register_post_type('familyfolio_photo', $args);
 }
 
 function familyfolio_register_family_recipe_cpt() {
@@ -101,5 +101,5 @@ function familyfolio_register_family_recipe_cpt() {
 		'menu_icon'          => 'dashicons-carrot', // Icon for the admin menu
 	];
 
-	register_post_type('family_recipe', $args);
+	register_post_type('familyfolio_recipe', $args);
 }

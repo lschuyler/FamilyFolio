@@ -9,7 +9,7 @@ add_action( 'manage_family_member_posts_custom_column', 'familyfolio_render_fami
  * Remove the default content editor.
  */
 add_action( 'init', function () {
-	remove_post_type_support( 'family_member', 'editor' );
+	remove_post_type_support( 'familyfolio_person', 'editor' );
 } );
 
 add_filter( 'enter_title_here', 'familyfolio_change_title_placeholder', 10, 2 );
@@ -61,7 +61,7 @@ function familyfolio_render_family_member_meta_box( $post ) {
 
 	// Fetch other family members for relationships
 	$family_members = get_posts( [
-		'post_type'   => 'family_member',
+		'post_type'   => 'familyfolio_person',
 		'numberposts' => - 1,
 		'orderby'     => 'title',
 		'order'       => 'ASC',
@@ -171,8 +171,8 @@ add_filter( 'gettext', 'familyfolio_change_publish_button', 10, 2 );
 function familyfolio_change_publish_button( $translated_text, $text ) {
 	global $post;
 
-	// Check if the current post type is 'family_member'
-	if ( isset( $post->post_type ) && 'family_member' === $post->post_type ) {
+	// Check if the current post type is 'familyfolio_person'
+	if ( isset( $post->post_type ) && 'familyfolio_person' === $post->post_type ) {
 		if ( $text === 'Publish' ) {
 			return 'Save Person';
 		}
@@ -194,7 +194,7 @@ function familyfolio_remove_schedule_option() {
 	global $post;
 
 	// Only apply for Family Member post type
-	if ( 'family_member' === $post->post_type ) {
+	if ( 'familyfolio_person' === $post->post_type ) {
 		?>
         <style>
             #misc-publishing-actions #visibility,
@@ -217,7 +217,7 @@ function familyfolio_remove_schedule_option() {
  * @return array Modified post states.
  */
 function familyfolio_hide_future_status( $post_states, $post ) {
-	if ( 'family_member' === $post->post_type && isset( $post_states['future'] ) ) {
+	if ( 'familyfolio_person' === $post->post_type && isset( $post_states['future'] ) ) {
 		unset( $post_states['future'] );
 	}
 
@@ -233,13 +233,13 @@ add_filter( 'post_type_labels_family_member', 'familyfolio_update_family_member_
 function familyfolio_rename_featured_image() {
 	global $post_type;
 
-	if ( 'family_member' === $post_type ) {
-		remove_meta_box( 'postimagediv', 'family_member', 'side' );
+	if ( 'familyfolio_person' === $post_type ) {
+		remove_meta_box( 'postimagediv', 'familyfolio_person', 'side' );
 		add_meta_box(
 			'postimagediv',
 			__( 'Profile Image' ),
 			'post_thumbnail_meta_box',
-			'family_member',
+			'familyfolio_person',
 			'side',
 			'low'
 		);
@@ -275,7 +275,7 @@ function familyfolio_add_relationship_meta_box() {
 		'family_member_relationships',
 		'Relationships',
 		'familyfolio_render_relationship_meta_box',
-		'family_member',
+		'familyfolio_person',
 		'normal',
 		'high'
 	);
@@ -284,26 +284,27 @@ function familyfolio_add_relationship_meta_box() {
 /**
  * Render the relationship management meta box.
  */
-function familyfolio_render_relationship_meta_box($post) {
-	wp_nonce_field('familyfolio_save_relationship_meta_box', 'familyfolio_relationship_meta_box_nonce');
+function familyfolio_render_relationship_meta_box( $post ) {
+	wp_nonce_field( 'familyfolio_save_relationship_meta_box', 'familyfolio_relationship_meta_box_nonce' );
 
 	// Retrieve existing relationships
-	$father_id = get_post_meta($post->ID, '_gedcom_father', true);
-	$mother_id = get_post_meta($post->ID, '_gedcom_mother', true);
-	$spouse_ids = get_post_meta($post->ID, '_gedcom_fams', true); // Spouse IDs
+	$father_id  = get_post_meta( $post->ID, '_gedcom_father', true );
+	$mother_id  = get_post_meta( $post->ID, '_gedcom_mother', true );
+	$spouse_ids = get_post_meta( $post->ID, '_gedcom_fams', true ); // Spouse IDs
 
 	// Fetch all family members except the current one
-	$family_members = get_posts([
-		'post_type'   => 'family_member',
-		'numberposts' => -1,
+	$family_members = get_posts( [
+		'post_type'   => 'familyfolio_person',
+		'numberposts' => - 1,
 		'orderby'     => 'title',
 		'order'       => 'ASC',
-		'exclude'     => [$post->ID],
-	]);
+		'exclude'     => [ $post->ID ],
+	] );
 
-	if (empty($family_members)) {
+	if ( empty( $family_members ) ) {
 		echo '<p><strong>No other family members added yet.</strong></p>';
 		echo '<p>Add at least one more person to start building relationships.</p>';
+
 		return;
 	}
 
@@ -312,9 +313,9 @@ function familyfolio_render_relationship_meta_box($post) {
         <label for="familyfolio_father">Father:</label>
         <select id="familyfolio_father" name="familyfolio_father">
             <option value="">Select a Father</option>
-			<?php foreach ($family_members as $member) : ?>
-                <option value="<?php echo esc_attr($member->ID); ?>" <?php selected($father_id, $member->ID); ?>>
-					<?php echo esc_html($member->post_title); ?>
+			<?php foreach ( $family_members as $member ) : ?>
+                <option value="<?php echo esc_attr( $member->ID ); ?>" <?php selected( $father_id, $member->ID ); ?>>
+					<?php echo esc_html( $member->post_title ); ?>
                 </option>
 			<?php endforeach; ?>
         </select>
@@ -323,9 +324,9 @@ function familyfolio_render_relationship_meta_box($post) {
         <label for="familyfolio_mother">Mother:</label>
         <select id="familyfolio_mother" name="familyfolio_mother">
             <option value="">Select a Mother</option>
-			<?php foreach ($family_members as $member) : ?>
-                <option value="<?php echo esc_attr($member->ID); ?>" <?php selected($mother_id, $member->ID); ?>>
-					<?php echo esc_html($member->post_title); ?>
+			<?php foreach ( $family_members as $member ) : ?>
+                <option value="<?php echo esc_attr( $member->ID ); ?>" <?php selected( $mother_id, $member->ID ); ?>>
+					<?php echo esc_html( $member->post_title ); ?>
                 </option>
 			<?php endforeach; ?>
         </select>
@@ -334,9 +335,9 @@ function familyfolio_render_relationship_meta_box($post) {
         <label for="familyfolio_spouses">Spouses:</label>
         <select id="familyfolio_spouses" name="familyfolio_spouses[]" multiple>
             <option value="">Select a Spouse</option>
-			<?php foreach ($family_members as $member) : ?>
-                <option value="<?php echo esc_attr($member->ID); ?>" <?php echo in_array($member->ID, (array)$spouse_ids) ? 'selected' : ''; ?>>
-					<?php echo esc_html($member->post_title); ?>
+			<?php foreach ( $family_members as $member ) : ?>
+                <option value="<?php echo esc_attr( $member->ID ); ?>" <?php echo in_array( $member->ID, (array) $spouse_ids ) ? 'selected' : ''; ?>>
+					<?php echo esc_html( $member->post_title ); ?>
                 </option>
 			<?php endforeach; ?>
         </select>
@@ -348,32 +349,32 @@ function familyfolio_render_relationship_meta_box($post) {
 /**
  * Save relationships for family members.
  */
-function familyfolio_save_relationship_metadata($post_id) {
-	if (!isset($_POST['familyfolio_relationship_meta_box_nonce']) || !wp_verify_nonce($_POST['familyfolio_relationship_meta_box_nonce'], 'familyfolio_save_relationship_meta_box')) {
+function familyfolio_save_relationship_metadata( $post_id ) {
+	if ( ! isset( $_POST['familyfolio_relationship_meta_box_nonce'] ) || ! wp_verify_nonce( $_POST['familyfolio_relationship_meta_box_nonce'], 'familyfolio_save_relationship_meta_box' ) ) {
 		return;
 	}
 
 	// Save Father
-	if (isset($_POST['familyfolio_father'])) {
-		update_post_meta($post_id, '_gedcom_father', sanitize_text_field($_POST['familyfolio_father']));
+	if ( isset( $_POST['familyfolio_father'] ) ) {
+		update_post_meta( $post_id, '_gedcom_father', sanitize_text_field( $_POST['familyfolio_father'] ) );
 	}
 
 	// Save Mother
-	if (isset($_POST['familyfolio_mother'])) {
-		update_post_meta($post_id, '_gedcom_mother', sanitize_text_field($_POST['familyfolio_mother']));
+	if ( isset( $_POST['familyfolio_mother'] ) ) {
+		update_post_meta( $post_id, '_gedcom_mother', sanitize_text_field( $_POST['familyfolio_mother'] ) );
 	}
 
 	// Save Spouses
-	if (isset($_POST['familyfolio_spouses'])) {
-		$spouse_ids = array_map('intval', $_POST['familyfolio_spouses']);
-		update_post_meta($post_id, '_gedcom_fams', $spouse_ids);
+	if ( isset( $_POST['familyfolio_spouses'] ) ) {
+		$spouse_ids = array_map( 'intval', $_POST['familyfolio_spouses'] );
+		update_post_meta( $post_id, '_gedcom_fams', $spouse_ids );
 
 		// Add reciprocal spouse relationships
-		foreach ($spouse_ids as $spouse_id) {
-			$spouses = get_post_meta($spouse_id, '_gedcom_fams', true) ?: [];
-			if (!in_array($post_id, $spouses)) {
+		foreach ( $spouse_ids as $spouse_id ) {
+			$spouses = get_post_meta( $spouse_id, '_gedcom_fams', true ) ?: [];
+			if ( ! in_array( $post_id, $spouses ) ) {
 				$spouses[] = $post_id;
-				update_post_meta($spouse_id, '_gedcom_fams', $spouses);
+				update_post_meta( $spouse_id, '_gedcom_fams', $spouses );
 			}
 		}
 	}
